@@ -143,27 +143,40 @@ class CoffeeWatcher(threading.Thread):
         self.running = True
         
         try:
-            i = 0.8 * self.update_interval
+            modulus = int(self.update_interval / self.liveness_interval)
+            i = 100*modulus / 80
             while self.running and self.parent:
-                if i % self.update_interval == 0 and self.watching != self.current:
-                    self.current = self.watching.copy()
-                    cmd = '%s -w -c %s' % (self.coffee_cmd, ' '.join("'%s'" % f for f in self.current ))
+                if i % modulus == 0:
+                    self.verifyFiles()
+                    
+                    if self.watching != self.current:
+                        self.restartWatcher()
                 
-                    if self.process:
-                        log.info('Restarting Watcher: watched set changed!  %s', cmd)
-                        self.process.send_signal(signal.SIGINT)
-                    else:
-                        log.info('Starting Watcher:  %s', cmd)
-                
-                    self.process = subprocess.Popen(shlex.split(cmd))
-            
                 time.sleep(self.liveness_interval)
-                i += self.liveness_interval
-        
+                i += 1
+            
             self.running = False
         except:
             log.exception('Error in CoffeeWatcher!')
             self.running = False
+    
+    def verifyFiles(self):
+        for f in list(self.watching):
+            if not os.path.exists(f):
+                log.debug('File Removed: No longer watching %s', f)
+                self.watching.remove(f)
+    
+    def restartWatcher(self):
+        self.current = self.watching.copy()
+        cmd = '%s -w -c %s' % (self.coffee_cmd, ' '.join("'%s'" % f for f in self.current ))
+        
+        if self.process:
+            log.info('Restarting Watcher: watched set changed! %s', cmd)
+            self.process.send_signal(signal.SIGINT)
+        else:
+            log.info('Starting Watcher:  %s', cmd)
+        
+        self.process = subprocess.Popen(shlex.split(cmd))
     
     def stop(self):
         if self.process:

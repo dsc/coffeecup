@@ -6,7 +6,7 @@ setup(
     version = "0.1.0",
     description = "CoffeScript WSGI Middleware",
     long_description = """
-        CoffeeCup is a WSGI middleware wrapper to transparently compile CoffeeScript files (things ending in `.coffee`) into javascript.
+        CoffeeCup is a WSGI middleware wrapper to transparently compile CoffeeScript files at serve-time.
     """,
     url = "http://github.com/dsc/coffeecup",
     
