@@ -30,13 +30,14 @@ I'll upload it to pypi eventually.
 
 The `CoffeeScriptMiddleware` takes optional arguments on instantiation:
 
- * `watch`: Whether to watch for changes. [Default: `True`]
- * `find_on_startup`: Whether to search the supplied static directory for `.coffee` files to watch and compile. [Default: `True`]
  * `static_dir`: Path to directory holding static files. [Default: Introspected using Pylons app config if available]
  * `coffee_cmd`: Path to the `coffee` executable. [Default: `/usr/local/bin/coffee`]
+ * `watch`: Whether to watch for changes. [Default: `True`]
+ * `find_on_startup`: Whether to search the supplied static directory for `.coffee` files to watch and compile. [Default: `False`]
 
 The middleware will also add several keys to the `environ` if it modifies the request:
 
+ * `coffeecup.new_path`: The new request path that CoffeeCup set `PATH_INFO` to.
  * `coffeecup.original_path`: The original request path, taken from `PATH_INFO`.
  * `coffeecup.real_path`: The real filesystem path compiled (if necessary) to serve this request.
 
@@ -71,7 +72,7 @@ As before, you can still pass other options.
 ## Todos
 
  * At the moment, the `CoffeeScriptMiddleware` currently only handles requests for static files, and determines which files to compile by file extension. It would make sense to add support to match on any request pattern, filtering the output stream through `coffee`.
- * Requests will never recompile `.coffee` files if a `.js` counterpart exists, instead relying on the watcher. It makes sense to add a staleness criterion to the configuration, or perhaps an override flag to the request.
+ * Requests will never recompile `.coffee` files if a `.js` counterpart exists, instead relying on the watcher. I can see a few cases where you'd want a staleness criterion or an override flag instead of relying on the watcher.
 
 
 ## Contact

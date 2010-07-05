@@ -16,14 +16,14 @@ class CoffeeScriptMiddleware(object):
     
     enabled = True
     watch = True
-    find_on_startup=True
+    find_on_startup=False
     
     app = None
     config = None
     watching = None
     
     
-    def __init__(self, app, config=None, watch=True, find_on_startup=True, static_dir=None, coffee_cmd=None):
+    def __init__(self, app, config=None, watch=True, find_on_startup=False, static_dir=None, coffee_cmd=None):
         self.app = app
         self.config = config or {}
         
@@ -44,21 +44,53 @@ class CoffeeScriptMiddleware(object):
     
     def __call__(self, environ, start_response):
         reqpath = environ.get('PATH_INFO', '')
+        newpath = None
         
-        if reqpath.endswith('.coffee'):
-            realpath, newpath = self.handleCoffeeScript(reqpath)
+        if reqpath.endswith('.js'):
+            realpath, newpath, coffeepath = self.handleJavaScript(reqpath)
+        elif reqpath.endswith('.coffee'):
+            realpath, newpath, coffeepath = self.handleCoffeeScript(reqpath)
+        
+        if newpath:
             environ['coffeecup.original_path'] = reqpath
             environ['coffeecup.real_path'] = realpath
+            environ['coffeecup.source_path'] = coffeepath
             environ['coffeecup.new_path'] = environ['PATH_INFO'] = newpath
         
         return self.app(environ, start_response)
     
     
+    def handleJavaScript(self, reqpath):
+        realpath = self.toStaticPath(reqpath)
+        coffeepath = join(dirname(realpath), realpath[:-3] + '.coffee')
+        if not os.path.exists(realpath) and os.path.exists(coffeepath):
+            log.debug('Compiling Coffee file for JS request: %s', reqpath)
+            try:
+                self.compileScript(coffeepath)
+                self.watching.add(coffeepath)
+            except CalledProcessError as ex:
+                log.error(
+                    '\n\t'.join([
+                        'Error compiling CoffeeScript:', 
+                            'reqpath: %s', 
+                            'realpath: %s',
+                            'newpath: %s',
+                            'command: %s',
+                            'retcode: %s',
+                            '\t%s',
+                    ]),
+                    reqpath, realpath, newpath,
+                    ex.cmd, ex.returncode, (ex.output or '').replace('\n', '\n\t\t') )
+        return realpath, reqpath, coffeepath
+    
+    
     def handleCoffeeScript(self, reqpath):
         realpath = self.toStaticPath(reqpath)
-        newpath = join( dirname(reqpath), basename(reqpath)[:-7] + '.js')
+        newpath = join( dirname(reqpath), reqpath[:-7] + '.js')
+        
+        log.debug('Coffee request: %s --> %s', reqpath, newpath)
         try:
-            self.compileScript(realpath, reqpath, newpath)
+            self.compileScript(realpath)
             self.watching.add(realpath)
         except CalledProcessError as ex:
             log.error(
@@ -73,26 +105,21 @@ class CoffeeScriptMiddleware(object):
                 ]),
                 reqpath, realpath, newpath,
                 ex.cmd, ex.returncode, (ex.output or '').replace('\n', '\n\t\t') )
-        return realpath, newpath
+        return realpath, newpath, realpath
     
     
-    def compileScript(self, realpath, reqpath, newpath):
-        log.debug('Coffee request: %s --> %s', reqpath, newpath)
-        
+    def compileScript(self, coffeefile):
         # Let the 404 drop through if the .coffee file doesn't exist
-        if not os.path.exists(realpath):
+        if not os.path.exists(coffeefile):
             return
         
-        name = basename(realpath)[:-7] + '.js'
-        jsfile = join( dirname(realpath), name )
-        
+        jsfile = join(dirname(coffeefile), coffeefile[:-7] + '.js')
         if os.path.exists(jsfile):
             log.debug('File extant: %s', jsfile)
         else:
-            log.debug('Compiling %s --> %s', realpath, jsfile)
-            cmd = "%s -c '%s'" % (self.coffee_cmd, realpath)
+            log.debug('Compiling %s --> %s', coffeefile, jsfile)
+            cmd = "%s -c '%s'" % (self.coffee_cmd, coffeefile)
             subprocess.check_call(shlex.split(cmd), stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-        
     
     
     def toStaticPath(self, virtpath):
