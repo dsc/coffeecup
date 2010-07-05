@@ -1,6 +1,6 @@
-# CoffeeCup -- CoffeScript WSGI Middleware
+# CoffeeCup -- CoffeeScript WSGI Middleware
 
-CoffeeCup is Python WSGI middleware wrapper to transparently compile [CoffeeScript](http://jashkenas.github.com/coffee-script) (files ending in `.coffee`) into JavaScript. CoffeeCup is intended for development; you should freeze your production CoffeeScript files before deployment like a good engineer.
+CoffeeCup is Python WSGI [middleware](http://www.python.org/dev/peps/pep-0333/) wrapper to transparently compile [CoffeeScript](http://jashkenas.github.com/coffee-script) into JavaScript on demand. CoffeeCup is intended to speed development; you really ought to manually compile your scripts before deployment to production like a good engineer.
 
 
 ## Features
@@ -13,7 +13,7 @@ CoffeeCup is Python WSGI middleware wrapper to transparently compile [CoffeeScri
 ## Install
 
 
-CoffeeCup depends on CoffeeScript, which depends on node.js.
+CoffeeCup depends on CoffeeScript, which depends on [node.js](http://nodejs.org).
 
  * [Install node.js](http://nodejs.org/#download)
  * [Install CoffeeScript](http://jashkenas.github.com/coffee-script/#installation)
@@ -30,10 +30,10 @@ I'll upload it to pypi eventually.
 
 The `CoffeeScriptMiddleware` takes optional arguments on instantiation:
 
- * `watch`: Whether to watch for changes. [Default: True]
- * `find_on_startup`: Whether to search the supplied static directory for `.coffee` files to watch and compile. [Default: True]
- * `static_dir`: Path to directory holding static files. [Default: Introspected using Pylons App config if available]
- * `coffee_cmd`: Path to the `coffee` executable. [Default: /usr/local/bin/coffee]
+ * `watch`: Whether to watch for changes. [Default: `True`]
+ * `find_on_startup`: Whether to search the supplied static directory for `.coffee` files to watch and compile. [Default: `True`]
+ * `static_dir`: Path to directory holding static files. [Default: Introspected using Pylons app config if available]
+ * `coffee_cmd`: Path to the `coffee` executable. [Default: `/usr/local/bin/coffee`]
 
 The middleware will also add several keys to the `environ` if it modifies the request:
 
@@ -76,4 +76,4 @@ As before, you can still pass other options.
 
 ## Contact
 
-Open a ticket at http://github.com/dsc/coffeecup or send me an email at [dsc@less.ly](mailto:dsc@less.ly).
+Open a ticket on [github](http://github.com/dsc/coffeecup) or send me an email at [dsc@less.ly](mailto:dsc@less.ly).
