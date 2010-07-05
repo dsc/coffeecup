@@ -49,7 +49,7 @@ class CoffeeScriptMiddleware(object):
             realpath, newpath = self.handleCoffeeScript(reqpath)
             environ['coffeecup.original_path'] = reqpath
             environ['coffeecup.real_path'] = realpath
-            environ['PATH_INFO'] = newpath
+            environ['coffeecup.new_path'] = environ['PATH_INFO'] = newpath
         
         return self.app(environ, start_response)
     
@@ -140,7 +140,7 @@ class CoffeeWatcher(threading.Thread):
         self.running = True
         
         try:
-            i = 1
+            i = 0
             while self.running:
                 if i % self.update_interval == 0 and self.watching != self.current:
                     self.current = self.watching.copy()
