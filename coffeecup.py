@@ -140,7 +140,7 @@ class CoffeeWatcher(threading.Thread):
         self.running = True
         
         try:
-            i = 0
+            i = 8
             while self.running:
                 if i % self.update_interval == 0 and self.watching != self.current:
                     self.current = self.watching.copy()
