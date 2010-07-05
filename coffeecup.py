@@ -79,6 +79,7 @@ class CoffeeScriptMiddleware(object):
     def compileScript(self, realpath, reqpath, newpath):
         log.debug('Coffee request: %s --> %s', reqpath, newpath)
         
+        # Let the 404 drop through if the .coffee file doesn't exist
         if not os.path.exists(realpath):
             return
         
@@ -111,6 +112,7 @@ class CoffeeScriptMiddleware(object):
     
     def startWatching(self):
         self.watcher = CoffeeWatcher(self)
+        # self.watcher.setDaemon(True)
         self.watcher.start()
     
 
@@ -128,36 +130,48 @@ class CoffeeWatcher(threading.Thread):
     
     
     
-    def __init__(self, parent, update_interval=10):
+    def __init__(self, parent, update_interval=10, liveness_interval=0.05):
         super(CoffeeWatcher, self).__init__(name='coffee-watcher')
         self.parent = parent
         self.coffee_cmd = parent.coffee_cmd
         self.watching = parent.watching
         self.current = set()
-        self.update_interval = int(update_interval)
+        self.update_interval = update_interval
+        self.liveness_interval = liveness_interval
     
     def run(self):
         self.running = True
         
         try:
-            i = 8
-            while self.running:
+            i = 0.8 * self.update_interval
+            while self.running and self.parent:
                 if i % self.update_interval == 0 and self.watching != self.current:
                     self.current = self.watching.copy()
                     cmd = '%s -w -c %s' % (self.coffee_cmd, ' '.join("'%s'" % f for f in self.current ))
-                    
+                
                     if self.process:
                         log.info('Restarting Watcher: watched set changed!  %s', cmd)
                         self.process.send_signal(signal.SIGINT)
                     else:
                         log.info('Starting Watcher:  %s', cmd)
-                    
-                    self.process = subprocess.Popen(shlex.split(cmd))
                 
-                time.sleep(1.0)
-                i += 1
+                    self.process = subprocess.Popen(shlex.split(cmd))
+            
+                time.sleep(self.liveness_interval)
+                i += self.liveness_interval
+        
+            self.running = False
         except:
             log.exception('Error in CoffeeWatcher!')
             self.running = False
-        
+    
+    def stop(self):
+        if self.process:
+            self.process.terminate()
+        log.debug('Watcher shutting down')
+        self.process = None
+        self.running = False
+    
+    def __del__(self):
+        self.stop()
 
