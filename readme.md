@@ -21,7 +21,7 @@ CoffeeCup depends on CoffeeScript, which depends on [node.js](http://nodejs.org)
 With that done, clone this repo and install the egg:
 
     git clone git://github.com/dsc/coffeecup.git
-    pip install coffeecup
+    pip install -e ./coffeecup/
 
 I'll upload it to pypi eventually.
 
